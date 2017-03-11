@@ -1,0 +1,1 @@
+select a,b from stud where  a > b and a < 1 or c = (select lfbj from efsdvx where not b);
