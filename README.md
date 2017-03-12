@@ -1,4 +1,4 @@
 # sqlparser
 
-* Put the input sql statement in in.txt
-* Run `bash run.sh`.
+* Specify input file to run in ```yacc/run.sh```
+* In ```yacc``` folder, run `bash run.sh`
