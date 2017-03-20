@@ -2,14 +2,20 @@
 #include <regex.h>
 using namespace std;
 
+// Token type constants
 #define SIZE 64
 char *names[]={"CREATE","TABLE","INSERT","INTO","SELECT","FROM","WHERE","UPDATE","PRIMARY","INDEX","FOREIGN","KEY","DEFAULT","NOT","NULL_TOKEN","AND","OR","XOR","ALL","SOME","ANY","BIT","INT","INTEGER","BIGINT","REAL","DOUBLE","FLOAT","DECIMAL","CHAR","VARCHAR","REFERENCES","ORDER","BY","DELETE","VALUES","AUTO_INCREMENT","ASC","DESC","UNIQUE","IN","TRUE","FALSE","DISTINCT","SET","DROP","ALTER","ADD","COLUMN","COMPARATOR","DATATYPE","ALL_COLUMN","BRACKET_OPEN","BRACKET_CLOSE","COMMA","IDENTIFIER","IDENTIFIER","INT_LITERAL","INT_LITERAL","INT_LITERAL","STRING_LITERAL","STRING_LITERAL","SPACE","SEMICOLON"};
 
+// Array of input tokens
 char **input_tokens;
+// Array of labelled tokens
 char **name_tokens;
+// Counter to keep track of current token
 int next;
+// Regex object
 regex_t re_obj[SIZE];
 
+// Struct for tree node
 enum treetype {nonterminal_node, keyword_node, number_node, string_node, identifier_node};
 
 typedef struct tree {
@@ -21,6 +27,7 @@ typedef struct tree {
     char text[100];
 } tree;
 
+// Function prototypes
 tree *make_nonterminal(char label[], int n, ...);
 tree *make_number(int n);
 tree *make_string(char v[]);
@@ -58,21 +65,17 @@ void printTree(tree *root, int level);
 void makeRegexObj(void);
 char **str_to_char_arr(vector<string> v);
 void print(char **v, int size);
+void process(char *match_string);
 
 // --------------------------------------------------
 
 int main()
 {
-    int i,flag;
     char input[1000];
-    std::vector<string> input_tokens_temp,name_tokens_temp;
-    char *temp_token=(char*)malloc(100);
+    fgets(input, 1000, stdin);
+    char *match_string = input;
 
     makeRegexObj();
-    fgets(input, 1000, stdin);
-
-    char *match_string = input;
-    regmatch_t matchptr[10];
 
     printf("--------------------------------------------------\n");
     printf("Input code:\n");
@@ -80,9 +83,25 @@ int main()
     printf("--------------------------------------------------\n");
     printf("Output:\n");
 
+    process(match_string);
+
+    return 0;
+}
+
+// --------------------------------------------------
+
+// Parse the given string
+void process(char *match_string)
+{
+    int i,flag;
+    std::vector<string> input_tokens_temp,name_tokens_temp;
+    char *temp_token=(char*)malloc(100);
+    regmatch_t matchptr[10];
+
     while(match_string[0]!='\0')
     {
         flag = 0;
+        // Loop through all regex cases to find match
         for(i=0;i<SIZE;i++)
         {
             if(regexec(&re_obj[i], match_string, 10, matchptr, 0) == 0)
@@ -102,6 +121,7 @@ int main()
                 flag = 1;
             }
         }
+        // If no regex is matched, show syntax error
         if(flag==0)
         {
             printf("\nUnexpected expression\n");
@@ -110,6 +130,7 @@ int main()
             break;
         }
     }
+    // If no syntax error was detected in code
     if(flag)
     {
         input_tokens = str_to_char_arr(input_tokens_temp);
@@ -119,12 +140,11 @@ int main()
         next = 0;
         printTree(start(),0);
     }
-
-    return 0;
 }
 
 // --------------------------------------------------
 
+// Make non-terminal node
 tree *make_nonterminal(char label[], int n, ...)
 {
     tree *result= (tree*) malloc (sizeof(tree));
@@ -139,6 +159,7 @@ tree *make_nonterminal(char label[], int n, ...)
     return result;
 }
 
+// Make int literal node
 tree *make_number(int n)
 {
     tree *result= (tree*) malloc (sizeof(tree));
@@ -147,6 +168,7 @@ tree *make_number(int n)
     return result;
 }
 
+// Make string literal node
 tree *make_string(char v[])
 {
     tree *result= (tree*) malloc (sizeof(tree));
@@ -155,6 +177,7 @@ tree *make_string(char v[])
     return result;
 }
 
+// Make keyword node
 tree *make_kw(char kw[], char str[])
 {
     tree *result= (tree*) malloc (sizeof(tree));
@@ -164,6 +187,7 @@ tree *make_kw(char kw[], char str[])
     return result;
 }
 
+// Make identifier node
 tree *make_identifier(char v[])
 {
     tree *result= (tree*) malloc (sizeof(tree));
@@ -174,6 +198,7 @@ tree *make_identifier(char v[])
 
 // --------------------------------------------------
 
+// Switch between terminal node based on label
 tree *term(char *tok)
 {
     if(strcmp(name_tokens[next++], tok) == 0)
@@ -191,6 +216,7 @@ tree *term(char *tok)
     return NULL;
 }
 
+// Make statement tree
 tree *stmt()
 {
     int save = next;
@@ -206,6 +232,7 @@ tree *stmt()
     return NULL;
 }
 
+// Make start tree
 tree *start()
 {
     tree *a = stmt();
@@ -215,6 +242,7 @@ tree *start()
     return NULL;
 }
 
+// Make column list tree
 tree *create_col_list()
 {
     int save = next;
@@ -231,6 +259,7 @@ tree *create_col_list()
 
 }
 
+// Make column definition tree
 tree *create_definition()
 {
     int save = next;
@@ -250,6 +279,7 @@ tree *create_definition()
     return NULL;
 }
 
+// Make column list tree
 tree *column_list()
 {
     int save = next;
@@ -266,6 +296,7 @@ tree *column_list()
     return NULL;
 }
 
+// Make data type tree
 tree *data_type()
 {
     int save = next;
@@ -302,6 +333,7 @@ tree *data_type()
     return NULL;
 }
 
+// Make length (optional) tree
 tree *opt_length()
 {
     int save = next;
@@ -314,6 +346,7 @@ tree *opt_length()
     return make_nonterminal("opt_length",0);
 }
 
+// Make create statement tree
 tree *create_stmt()
 {
     tree *a = term("CREATE");
@@ -327,6 +360,7 @@ tree *create_stmt()
     return NULL;
 } 
 
+// Make expression tree
 tree *expr()
 {
     int save=next;
@@ -353,9 +387,9 @@ tree *expr()
         return make_nonterminal("expr",3,a,b,c);
     next=save;
     return NULL;
-
 }
 
+// Make select expression tree
 tree *select_expr_list()
 {
     int save = next;
@@ -380,7 +414,7 @@ tree *select_expr_list()
     return NULL;
 }
 
-
+// Make select statement tree
 tree *select_stmt()
 {
     tree *a = term("SELECT");
@@ -393,6 +427,7 @@ tree *select_stmt()
     return NULL;
 }
 
+// Make where (optional) tree
 tree *opt_where()
 {
     int save = next;
@@ -404,6 +439,7 @@ tree *opt_where()
     return make_nonterminal("opt_where",0);
 }
 
+// Make insert statement tree
 tree *insert_stmt()
 {
     tree *a = term("INSERT");
@@ -419,6 +455,7 @@ tree *insert_stmt()
     return NULL;
 }
 
+// Make column names (optional) tree
 tree *opt_col_names()
 {
     int save = next;
@@ -431,7 +468,7 @@ tree *opt_col_names()
     return make_nonterminal("opt_col_names",0);
 }
 
-
+// Make insert values tree
 tree *insert_vals_list()
 {
     int save = next;
@@ -448,6 +485,7 @@ tree *insert_vals_list()
     return NULL;
 }
 
+// Make update statement tree
 tree *update_stmt()
 {
     tree *a = term("UPDATE");    
@@ -460,6 +498,7 @@ tree *update_stmt()
     return NULL;    
 }
 
+// Make expression utility tree
 tree *expr2()
 {
     tree *a = expr();
@@ -469,6 +508,7 @@ tree *expr2()
         return make_nonterminal("expr", 3, a, b, c);
 }
 
+// Make expression utility tree
 tree *expr1()
 {
     int save = next;
@@ -540,31 +580,30 @@ tree *expr1()
     return NULL;
 }
 
+// Make delete statement tree
 tree *delete_stmt()
 {
     tree *a=term("DELETE");
     tree *b=term("FROM");
     tree *c=term("IDENTIFIER");
     tree *d=opt_where();
-
     if(a && b&& c &&d)
         return make_nonterminal("delete_stmt",4,a,b,c,d);
-
     return NULL;
 }
 
+// Make drop table statement tree
 tree *drop_table_stmt()
 {
     tree *a=term("DROP");
     tree *b=term("TABLE");
     tree *c=term("IDENTIFIER");
-
     if(a && b && c)
         return make_nonterminal("drop_table_stmt",3,a,b,c);
-
     return NULL;
 }
 
+// Make drop column tree
 tree *drop_col_stmt()
 {
     tree *a=term("ALTER");
@@ -573,13 +612,12 @@ tree *drop_col_stmt()
     tree *d=term("DROP");
     tree *e=term("COLUMN");
     tree *f=term("IDENTIFIER");
-
     if(a && b && c && d && e && f)
         return make_nonterminal("drop_col_stmt",6,a,b,c,d,e,f);
-
     return NULL;
 }
 
+// Make add column tree
 tree *add_col_stmt()
 {
     tree *a=term("ALTER");
@@ -588,20 +626,18 @@ tree *add_col_stmt()
     tree *d=term("ADD");
     tree *e=term("COLUMN");
     tree *f=create_definition();
-
     if(a && b && c && d && e && f)
         return make_nonterminal("add_col_stmt",6,a,b,c,d,e,f);
-
     return NULL;
 }
 
+// Make update assignment tree
 tree *update_asign_list()
 {
     int save=next;
     tree *a=term("IDENTIFIER");
     tree *b=term("COMPARATOR");
     tree *c=expr();
-
     if(a && b && c)
     {
         if(factor())
@@ -614,13 +650,12 @@ tree *update_asign_list()
             tree *e=update_asign_list();
             return make_nonterminal("update_asign_list",5,a,b,c,d,e);
         }
-
         return make_nonterminal("update_asign_list",3,a,b,c);
     }
-
     return NULL;
 }
 
+// Make comma tree
 bool factor()
 {
     tree *a = term("COMMA");
@@ -631,6 +666,7 @@ bool factor()
 
 // --------------------------------------------------
 
+// Function to print indented tree
 void printTree(tree *root, int level)
 {
     int i;
@@ -652,6 +688,7 @@ void printTree(tree *root, int level)
 
 // --------------------------------------------------
 
+// Function to make regex array object
 void makeRegexObj(void)
 {
     regcomp(&re_obj[0]  , "^create\\b"                                                  , REG_ICASE | REG_NEWLINE );
@@ -720,7 +757,7 @@ void makeRegexObj(void)
     regcomp(&re_obj[63] , "^;"                                                          , REG_ICASE | REG_NEWLINE );
 }
 
-
+// Utility function to print char** type array
 void print(char **v, int size)
 {
     int i;
@@ -731,7 +768,7 @@ void print(char **v, int size)
     cout<<" ]"<<endl;
 }
 
-
+// Utility function to convert string vector to char** array
 char **str_to_char_arr(vector<string> v)
 {
     char** cstrings = new char*[v.size()];
