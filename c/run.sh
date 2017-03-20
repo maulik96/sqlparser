@@ -1,2 +1,2 @@
 g++ -w sql.cpp
-./a.out < ../input/2.txt
+./a.out < ../input/1.txt

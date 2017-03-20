@@ -1,1 +1,1 @@
-create table ab(id int, primary key(id));
+delete from a where 1=1;
