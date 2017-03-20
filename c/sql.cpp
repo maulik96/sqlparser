@@ -26,34 +26,19 @@ tree *make_kw(char kw[], char str[]);
 tree *make_identifier(char v[]);
 
 tree *term(char *tok);
-
 tree *select_stmt();
-
-bool create_definition_factor();
-
 tree *create_col_list();
-
 tree *create_definition();
-
 tree *column_list();
-
 tree *data_type();
-
 tree *opt_length();
-
 tree *create_stmt();
-
 tree *insert_stmt();
-
 tree *opt_col_names();
-
 tree *insert_vals_list();
-
 tree *stmt();
-
 tree *start();
-
-
+bool create_definition_factor();
 
 void printTree(tree *root, int level);
 
@@ -117,10 +102,10 @@ int main()
     {
         char **input_tokens = str_to_char_arr(input_tokens_temp);
         char **name_tokens = str_to_char_arr(name_tokens_temp);
-        print(input_tokens,input_tokens_temp.size());
-        print(name_tokens,name_tokens_temp.size());
-        char *arr[] = {"CREATE", "TABLE" ,"IDENTIFIER", "BRACKET_OPEN", "IDENTIFIER", "INT", "COMMA","PRIMARY","KEY","BRACKET_OPEN","IDENTIFIER","BRACKET_CLOSE", "BRACKET_CLOSE","SEMICOLON"};
-        next = arr;
+        // print(input_tokens,input_tokens_temp.size());
+        // print(name_tokens,name_tokens_temp.size());
+        next = name_tokens;
+        print(next,input_tokens_temp.size());
         printTree(start(),0);
     }
 
