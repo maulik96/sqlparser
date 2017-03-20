@@ -26,34 +26,20 @@ tree *make_kw(char kw[], char str[]);
 tree *make_identifier(char v[]);
 
 tree *term(char *tok);
-
 tree *select_stmt();
-
-bool create_definition_factor();
-
 tree *create_col_list();
-
 tree *create_definition();
-
 tree *column_list();
-
 tree *data_type();
-
 tree *opt_length();
-
 tree *create_stmt();
-
 tree *insert_stmt();
-
 tree *opt_col_names();
-
 tree *insert_vals_list();
-
 tree *stmt();
-
 tree *start();
-
-
+tree *update_asign_list():
+bool create_definition_factor();
 
 void printTree(tree *root, int level);
 
@@ -117,10 +103,10 @@ int main()
     {
         char **input_tokens = str_to_char_arr(input_tokens_temp);
         char **name_tokens = str_to_char_arr(name_tokens_temp);
-        print(input_tokens,input_tokens_temp.size());
-        print(name_tokens,name_tokens_temp.size());
-        char *arr[] = {"CREATE", "TABLE" ,"IDENTIFIER", "BRACKET_OPEN", "IDENTIFIER", "INT", "COMMA","PRIMARY","KEY","BRACKET_OPEN","IDENTIFIER","BRACKET_CLOSE", "BRACKET_CLOSE","SEMICOLON"};
-        next = arr;
+        // print(input_tokens,input_tokens_temp.size());
+        // print(name_tokens,name_tokens_temp.size());
+        next = name_tokens;
+        print(next,input_tokens_temp.size());
         printTree(start(),0);
     }
 
@@ -424,6 +410,87 @@ tree *opt_col_names()
 tree *insert_vals_list()
 {
     char **save = next;
+    return NULL;
+}
+
+tree *delete_stmt()
+{
+    tree *a=term("DELETE");
+    tree *b=term("FROM");
+    tree *c=term("IDENTIFIER");
+    tree *d=opt_where();
+
+    if(a && b&& c &&d)
+        return make_nonterminal("delete_stmt",4,a,b,c,d);
+
+    return NULL;
+}
+
+tree *drop_table_stmt()
+{
+    tree *a=term("DROP");
+    tree *b=term("TABLE");
+    tree *c=term("IDENTIFIER");
+
+    if(a&&b&&c)
+        return make_nonterminal("drop_table_stmt",3,a,b,c);
+
+    return NULL;
+}
+
+tree *drop_col_stmt()
+{
+    tree *a=term("ALTER");
+    tree *b=term("TABLE");
+    tree *c=term("IDENTIFIER");
+    tree *d=term("DROP");
+    tree *e=term("COLUMN");
+    tree *f=term("IDENTIFIER");
+
+    if(a && b && c && d && e && f)
+        return make_nonterminal("drop_col_stmt",6,a,b,c,d,e,f);
+
+    return NULL;
+}
+
+tree *add_col_stmt()
+{
+    tree *a=term("ALTER");
+    tree *b=term("TABLE");
+    tree *c=term("IDENTIFIER");
+    tree *d=term("ADD");
+    tree *e=term("COLUMN");
+    tree *f=create_definition();
+
+    if(a && b && c && d && e && f)
+        return make_nonterminal("add_col_stmt",6,a,b,c,d,e,f);
+
+    return NULL;
+}
+
+tree *update_asign_list()
+{
+    char **save=next;
+    tree *a=term("IDENTIFIER");
+    tree *b=term("COMPARATOR");
+    term *c=expr();
+
+    if(a && b && c)
+    {
+        if(factor())
+        {
+            next=save;
+            a=term("IDENTIFIER");
+            b=term("COMPARATOR");
+            c=expr();
+            tree *d=term("COMMA");
+            term *e=update_asign_list();
+            return make_nonterminal("update_asign_list",5,a,b,c,d,e);
+        }
+
+        return make_nonterminal("update_asign_list",3,a,b,c);
+    }
+
     return NULL;
 }
 
