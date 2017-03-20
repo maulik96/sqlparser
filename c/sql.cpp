@@ -2,8 +2,8 @@
 #include <regex.h>
 using namespace std;
 
-#define SIZE 62
-char *names[]={"CREATE","TABLE","INSERT","INTO","SELECT","FROM","WHERE","UPDATE","PRIMARY","INDEX","FOREIGN","KEY","DEFAULT","NOT","NULL_TOKEN","AND","OR","XOR","ALL","SOME","ANY","BIT","INT","INTEGER","BIGINT","REAL","DOUBLE","FLOAT","DECIMAL","CHAR","VARCHAR","REFERENCES","ORDER","BY","DELETE","VALUES","AUTO_INCREMENT","ASC","DESC","UNIQUE","IN","TRUE","FALSE","DISTINCT","SET","DROP","ALTER","ADD","COLUMN","COMPARATOR","DATATYPE","ALL_COLUMN","BRACKET_OPEN","BRACKET_CLOSE","COMMA","IDENTIFIER","IDENTIFIER","INT_LITERAL","STRING_LITERAL","STRING_LITERAL","SPACE","SEMICOLON"};
+#define SIZE 64
+char *names[]={"CREATE","TABLE","INSERT","INTO","SELECT","FROM","WHERE","UPDATE","PRIMARY","INDEX","FOREIGN","KEY","DEFAULT","NOT","NULL_TOKEN","AND","OR","XOR","ALL","SOME","ANY","BIT","INT","INTEGER","BIGINT","REAL","DOUBLE","FLOAT","DECIMAL","CHAR","VARCHAR","REFERENCES","ORDER","BY","DELETE","VALUES","AUTO_INCREMENT","ASC","DESC","UNIQUE","IN","TRUE","FALSE","DISTINCT","SET","DROP","ALTER","ADD","COLUMN","COMPARATOR","DATATYPE","ALL_COLUMN","BRACKET_OPEN","BRACKET_CLOSE","COMMA","IDENTIFIER","IDENTIFIER","INT_LITERAL","INT_LITERAL","INT_LITERAL","STRING_LITERAL","STRING_LITERAL","SPACE","SEMICOLON"};
 
 regex_t re_obj[SIZE];
 
@@ -32,7 +32,7 @@ int main()
 {
     int i,flag;
     char input[1000];
-    std::vector<string> input_tokens,lexed_tokens;
+    std::vector<string> input_tokens,name_tokens;
 
     makeRegexObj();
     fgets(input, 1000, stdin);
@@ -46,6 +46,7 @@ int main()
     printf("--------------------------------------------------\n");
     printf("Output:\n");
 
+    char *temp_token=(char*)malloc(100);
     while(match_string[0]!='\0')
     {
         flag = 0;
@@ -55,24 +56,32 @@ int main()
             {
                 if(strcmp(names[i],"SPACE")!=0)
                 {
-                    printf("%s ", names[i]);
+                    free(temp_token);
+                    temp_token=(char*)malloc(100);
+                    strncpy(temp_token,match_string,matchptr[0].rm_eo);
+                    std::string s1(temp_token), s2(names[i]);
+                    input_tokens.push_back(s1);
+                    name_tokens.push_back(s2);
+                    match_string += matchptr[0].rm_eo;
                 }
-                match_string += matchptr[0].rm_eo;
+                else
+                    match_string += matchptr[0].rm_eo;
                 flag = 1;
             }
         }
         if(flag==0)
         {
-            printf("\n");
             printf("\nUnexpected expression\n");
             printf("%s\n",match_string);
-            printf("--------------------------------------------------\n\n\n");
+            printf("--------------------------------------------------\n");
             break;
         }
     }
-    // if(flag)
-    //     print(input_tokens);
-    printf("\n");
+    if(flag)
+    {
+        print(input_tokens);
+        print(name_tokens);
+    }
 
     return 0;
 }
@@ -80,14 +89,14 @@ int main()
 void print(std::vector<string> v)
 {
     int i;
-    printf("[");
+    cout<<"[";
     if(v.size()>0)
     {
-        printf(" %s", v[0]);
+        cout<<" "<<v[0];
         for(i=1;i<v.size();i++)
-            printf(", %s",v[i]);
+            cout<<", "<<v[i];
     }
-    printf(" ]\n");
+    cout<<" ]"<<endl;
 }
 
 
@@ -216,12 +225,14 @@ void makeRegexObj(void)
     regcomp(&re_obj[51] , "^\*"                                                         , REG_ICASE | REG_NEWLINE );
     regcomp(&re_obj[52] , "^\("                                                         , REG_ICASE | REG_NEWLINE );
     regcomp(&re_obj[53] , "^\)"                                                         , REG_ICASE | REG_NEWLINE );
-    regcomp(&re_obj[54] , "^,\\b"                                                          , REG_ICASE | REG_NEWLINE );
+    regcomp(&re_obj[54] , "^,"                                                          , REG_ICASE | REG_NEWLINE );
     regcomp(&re_obj[55] , "^[a-zA-Z][a-zA-Z0-9_]*\\b"                                   , REG_ICASE | REG_NEWLINE );
     regcomp(&re_obj[56] , "^`[a-zA-Z][a-zA-Z0-9_]*`\\b"                                 , REG_ICASE | REG_NEWLINE );
-    regcomp(&re_obj[57] , "^[+-]?[0-9][0-9]*"                                           , REG_ICASE | REG_NEWLINE ); // may be wrong
-    regcomp(&re_obj[58] , "^\"[^\"]*\""                                                 , REG_ICASE | REG_NEWLINE );
-    regcomp(&re_obj[59] , "^\'[^\"]*\'"                                                 , REG_ICASE | REG_NEWLINE );
-    regcomp(&re_obj[60] , "^[ ][ ]*"                                                    , REG_ICASE | REG_NEWLINE );
-    regcomp(&re_obj[61] , "^;"                                                          , REG_ICASE | REG_NEWLINE );
+    regcomp(&re_obj[57] , "^[0-9][0-9]*"                                                , REG_ICASE | REG_NEWLINE );
+    regcomp(&re_obj[58] , "^+[0-9][0-9]*"                                               , REG_ICASE | REG_NEWLINE );
+    regcomp(&re_obj[59] , "^-[0-9][0-9]*"                                               , REG_ICASE | REG_NEWLINE );
+    regcomp(&re_obj[60] , "^\"[^\"]*\""                                                 , REG_ICASE | REG_NEWLINE );
+    regcomp(&re_obj[61] , "^\'[^\"]*\'"                                                 , REG_ICASE | REG_NEWLINE );
+    regcomp(&re_obj[62] , "^[ ][ ]*"                                                    , REG_ICASE | REG_NEWLINE );
+    regcomp(&re_obj[63] , "^;"                                                          , REG_ICASE | REG_NEWLINE );
 }
