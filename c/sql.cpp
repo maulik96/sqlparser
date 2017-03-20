@@ -53,7 +53,7 @@ tree *stmt();
 
 tree *start();
 
-
+tree *update_asign_list():
 
 void printTree(tree *root, int level);
 
@@ -354,6 +354,87 @@ tree *opt_col_names()
 tree *insert_vals_list()
 {
     char **save = next;
+    return NULL;
+}
+
+tree *delete_stmt()
+{
+    tree *a=term("DELETE");
+    tree *b=term("FROM");
+    tree *c=term("IDENTIFIER");
+    tree *d=opt_where();
+
+    if(a && b&& c &&d)
+        return make_nonterminal("delete_stmt",4,a,b,c,d);
+
+    return NULL;
+}
+
+tree *drop_table_stmt()
+{
+    tree *a=term("DROP");
+    tree *b=term("TABLE");
+    tree *c=term("IDENTIFIER");
+
+    if(a&&b&&c)
+        return make_nonterminal("drop_table_stmt",3,a,b,c);
+
+    return NULL;
+}
+
+tree *drop_col_stmt()
+{
+    tree *a=term("ALTER");
+    tree *b=term("TABLE");
+    tree *c=term("IDENTIFIER");
+    tree *d=term("DROP");
+    tree *e=term("COLUMN");
+    tree *f=term("IDENTIFIER");
+
+    if(a && b && c && d && e && f)
+        return make_nonterminal("drop_col_stmt",6,a,b,c,d,e,f);
+
+    return NULL;
+}
+
+tree *add_col_stmt()
+{
+    tree *a=term("ALTER");
+    tree *b=term("TABLE");
+    tree *c=term("IDENTIFIER");
+    tree *d=term("ADD");
+    tree *e=term("COLUMN");
+    tree *f=create_definition();
+
+    if(a && b && c && d && e && f)
+        return make_nonterminal("add_col_stmt",6,a,b,c,d,e,f);
+
+    return NULL;
+}
+
+tree *update_asign_list()
+{
+    char **save=next;
+    tree *a=term("IDENTIFIER");
+    tree *b=term("COMPARATOR");
+    term *c=expr();
+
+    if(a && b && c)
+    {
+        if(factor())
+        {
+            next=save;
+            a=term("IDENTIFIER");
+            b=term("COMPARATOR");
+            c=expr();
+            tree *d=term("COMMA");
+            term *e=update_asign_list();
+            return make_nonterminal("update_asign_list",5,a,b,c,d,e);
+        }
+
+        return make_nonterminal("update_asign_list",3,a,b,c);
+    }
+
     return NULL;
 }
 
