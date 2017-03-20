@@ -5,6 +5,7 @@ using namespace std;
 #define SIZE 64
 char *names[]={"CREATE","TABLE","INSERT","INTO","SELECT","FROM","WHERE","UPDATE","PRIMARY","INDEX","FOREIGN","KEY","DEFAULT","NOT","NULL_TOKEN","AND","OR","XOR","ALL","SOME","ANY","BIT","INT","INTEGER","BIGINT","REAL","DOUBLE","FLOAT","DECIMAL","CHAR","VARCHAR","REFERENCES","ORDER","BY","DELETE","VALUES","AUTO_INCREMENT","ASC","DESC","UNIQUE","IN","TRUE","FALSE","DISTINCT","SET","DROP","ALTER","ADD","COLUMN","COMPARATOR","DATATYPE","ALL_COLUMN","BRACKET_OPEN","BRACKET_CLOSE","COMMA","IDENTIFIER","IDENTIFIER","INT_LITERAL","INT_LITERAL","INT_LITERAL","STRING_LITERAL","STRING_LITERAL","SPACE","SEMICOLON"};
 
+char **next;
 regex_t re_obj[SIZE];
 
 enum treetype {nonterminal_node, keyword_node, number_node, string_node, identifier_node};
@@ -15,24 +16,30 @@ typedef struct tree {
     int number, size;
     char label[20];
     char keyword[100];
-    char string[100];
+    char text[100];
 } tree;
 
 tree *make_nonterminal(char label[], int n, ...);
 tree *make_number(int n);
-tree *make_string (char v[]);
-tree *make_kw (char kw[], char str[]);
-tree *make_identifier (char v[]);
-void printTree(tree *root, int level);
-void makeRegexObj(void);
-void print(std::vector<string> v);
+tree *make_string(char v[]);
+tree *make_kw(char kw[], char str[]);
+tree *make_identifier(char v[]);
 
+void printTree(tree *root, int level);
+
+void makeRegexObj(void);
+char **str_to_char_arr(vector<string> v);
+void print(std::vector<string> v);
+void print(char **v, int size);
+
+// --------------------------------------------------
 
 int main()
 {
     int i,flag;
     char input[1000];
-    std::vector<string> input_tokens,name_tokens;
+    std::vector<string> input_tokens_temp,name_tokens_temp;
+    char *temp_token=(char*)malloc(100);
 
     makeRegexObj();
     fgets(input, 1000, stdin);
@@ -46,7 +53,6 @@ int main()
     printf("--------------------------------------------------\n");
     printf("Output:\n");
 
-    char *temp_token=(char*)malloc(100);
     while(match_string[0]!='\0')
     {
         flag = 0;
@@ -60,8 +66,8 @@ int main()
                     temp_token=(char*)malloc(100);
                     strncpy(temp_token,match_string,matchptr[0].rm_eo);
                     std::string s1(temp_token), s2(names[i]);
-                    input_tokens.push_back(s1);
-                    name_tokens.push_back(s2);
+                    input_tokens_temp.push_back(s1);
+                    name_tokens_temp.push_back(s2);
                     match_string += matchptr[0].rm_eo;
                 }
                 else
@@ -79,26 +85,17 @@ int main()
     }
     if(flag)
     {
-        print(input_tokens);
-        print(name_tokens);
+        char **input_tokens = str_to_char_arr(input_tokens_temp);
+        char **name_tokens = str_to_char_arr(name_tokens_temp);
+        print(input_tokens,input_tokens_temp.size());
+        print(name_tokens,name_tokens_temp.size());
+        next = input_tokens;
     }
 
     return 0;
 }
 
-void print(std::vector<string> v)
-{
-    int i;
-    cout<<"[";
-    if(v.size()>0)
-    {
-        cout<<" "<<v[0];
-        for(i=1;i<v.size();i++)
-            cout<<", "<<v[i];
-    }
-    cout<<" ]"<<endl;
-}
-
+// --------------------------------------------------
 
 tree *make_nonterminal(char label[], int n, ...)
 {
@@ -122,32 +119,85 @@ tree *make_number(int n)
     return result;
 }
 
-
-tree *make_string (char v[])
+tree *make_string(char v[])
 {
     tree *result= (tree*) malloc (sizeof(tree));
     result->nodetype= string_node;
-    strcpy(result->string, v);
+    strcpy(result->text, v);
     return result;
 }
 
-tree *make_kw (char kw[], char str[])
+tree *make_kw(char kw[], char str[])
 {
     tree *result= (tree*) malloc (sizeof(tree));
     result->nodetype= keyword_node;
     strcpy(result->keyword, kw);
-    strcpy(result->string, str);
+    strcpy(result->text, str);
     return result;
 }
 
-tree *make_identifier (char v[])
+tree *make_identifier(char v[])
 {
     tree *result= (tree*) malloc (sizeof(tree));
     result->nodetype= identifier_node;
-    strcpy(result->string, v);
+    strcpy(result->text, v);
     return result;
 }
 
+// --------------------------------------------------
+
+// tree *term(char *tok)
+// {
+//     if(strcmp(*next++, tok) == 0)
+//         return make_identifier(tok);
+//     *next--;
+//     return NULL;
+// }
+
+// tree *start()
+// {
+//     tree *a = stmt();
+//     tree *b = term("SEMICOLON");
+//     if(a && b)
+//         return make_nonterminal("start", 2, a,b);
+//     return NULL;
+// }
+
+// tree *stmt()
+// {
+//     char **save = next;
+//     // tree *a = select_stmt();
+//     // if(a)
+//     //     return make_nonterminal("stmt",1,a);
+//     // next = save;
+//     a = create_stmt();
+//     if(a)
+//         return make_nonterminal("stmt",1,a);
+//     next = save;
+//     return NULL;
+// }
+
+// tree *select_stmt()
+// {
+//     tree *a = term("select");
+//     if(a)
+//         return make_nonterminal("select_stmt", 1, a);
+//     return NULL;
+// }
+
+// tree *create_stmt()
+// {
+//     tree *a = term("CREATE");
+//     tree *b = term("TABLE");
+//     tree *b = term("IDENTIFIER");
+//     tree *b = term("BRACKET_OPEN");
+//     tree *b = ;
+//     if(a)
+//         return make_nonterminal("create_stmt", 1, a);
+//     return NULL;
+// }
+
+// --------------------------------------------------
 
 void printTree(tree *root, int level)
 {
@@ -161,13 +211,14 @@ void printTree(tree *root, int level)
     else if(root->nodetype == number_node)
         printf("%*sNUM_LITERAL -- %d\n", level, "", root->number);
     else if(root->nodetype == keyword_node)
-        printf("%*s%s -- %s\n", level, "", root->keyword, root->string);
+        printf("%*s%s -- %s\n", level, "", root->keyword, root->text);
     else if(root->nodetype == string_node)
-        printf("%*sSTRING_LITERAL -- %s\n", level, "", root->string);
+        printf("%*sSTRING_LITERAL -- %s\n", level, "", root->text);
     else
-        printf("%*sIDENTIFIER -- %s\n",level, "", root->string);
+        printf("%*sIDENTIFIER -- %s\n",level, "", root->text);
 }
 
+// --------------------------------------------------
 
 void makeRegexObj(void)
 {
@@ -235,4 +286,42 @@ void makeRegexObj(void)
     regcomp(&re_obj[61] , "^\'[^\"]*\'"                                                 , REG_ICASE | REG_NEWLINE );
     regcomp(&re_obj[62] , "^[ ][ ]*"                                                    , REG_ICASE | REG_NEWLINE );
     regcomp(&re_obj[63] , "^;"                                                          , REG_ICASE | REG_NEWLINE );
+}
+
+
+void print(std::vector<string> v)
+{
+    int i;
+    cout<<"[";
+    if(v.size()>0)
+    {
+        cout<<" "<<v[0];
+        for(i=1;i<v.size();i++)
+            cout<<", "<<v[i];
+    }
+    cout<<" ]"<<endl;
+}
+
+void print(char **v, int size)
+{
+    int i;
+    cout<<"[";
+    cout<<" "<<v[0];
+    for(i=1;i<size;i++)
+        cout<<", "<<v[i];
+    cout<<" ]"<<endl;
+}
+
+
+char **str_to_char_arr(vector<string> v)
+{
+    char** cstrings = new char*[v.size()];
+
+    for(size_t i = 0; i < v.size(); ++i)
+    {
+        cstrings[i] = new char[v[i].size() + 1];
+        std::strcpy(cstrings[i], v[i].c_str());
+    }
+
+    return cstrings;
 }
