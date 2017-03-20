@@ -5,7 +5,9 @@ using namespace std;
 #define SIZE 64
 char *names[]={"CREATE","TABLE","INSERT","INTO","SELECT","FROM","WHERE","UPDATE","PRIMARY","INDEX","FOREIGN","KEY","DEFAULT","NOT","NULL_TOKEN","AND","OR","XOR","ALL","SOME","ANY","BIT","INT","INTEGER","BIGINT","REAL","DOUBLE","FLOAT","DECIMAL","CHAR","VARCHAR","REFERENCES","ORDER","BY","DELETE","VALUES","AUTO_INCREMENT","ASC","DESC","UNIQUE","IN","TRUE","FALSE","DISTINCT","SET","DROP","ALTER","ADD","COLUMN","COMPARATOR","DATATYPE","ALL_COLUMN","BRACKET_OPEN","BRACKET_CLOSE","COMMA","IDENTIFIER","IDENTIFIER","INT_LITERAL","INT_LITERAL","INT_LITERAL","STRING_LITERAL","STRING_LITERAL","SPACE","SEMICOLON"};
 
-char **next;
+char **input_tokens;
+char **name_tokens;
+int next;
 regex_t re_obj[SIZE];
 
 enum treetype {nonterminal_node, keyword_node, number_node, string_node, identifier_node};
@@ -26,27 +28,35 @@ tree *make_kw(char kw[], char str[]);
 tree *make_identifier(char v[]);
 
 tree *term(char *tok);
-tree *select_stmt();
+tree *stmt();
+tree *start();
 tree *create_col_list();
 tree *create_definition();
 tree *column_list();
 tree *data_type();
 tree *opt_length();
 tree *create_stmt();
+tree *expr();
+tree *select_expr_list();
+tree *select_stmt();
+tree *opt_where();
 tree *insert_stmt();
 tree *opt_col_names();
 tree *insert_vals_list();
-tree *stmt();
-tree *start();
-tree *update_asign_list();
-tree *opt_where();
-bool create_definition_factor();
+tree *update_stmt();
+tree *expr2();
 tree *expr1();
+tree *delete_stmt();
+tree *drop_table_stmt();
+tree *drop_col_stmt();
+tree *add_col_stmt();
+tree *update_asign_list();
+bool factor();
+
 void printTree(tree *root, int level);
 
 void makeRegexObj(void);
 char **str_to_char_arr(vector<string> v);
-void print(std::vector<string> v);
 void print(char **v, int size);
 
 // --------------------------------------------------
@@ -102,12 +112,11 @@ int main()
     }
     if(flag)
     {
-        char **input_tokens = str_to_char_arr(input_tokens_temp);
-        char **name_tokens = str_to_char_arr(name_tokens_temp);
+        input_tokens = str_to_char_arr(input_tokens_temp);
+        name_tokens = str_to_char_arr(name_tokens_temp);
         // print(input_tokens,input_tokens_temp.size());
         // print(name_tokens,name_tokens_temp.size());
-        next = name_tokens;
-        print(next,input_tokens_temp.size());
+        next = 0;
         printTree(start(),0);
     }
 
@@ -167,34 +176,48 @@ tree *make_identifier(char v[])
 
 tree *term(char *tok)
 {
-    if(strcmp(*next++, tok) == 0)
+    if(strcmp(name_tokens[next++], tok) == 0)
     {
         if(strcmp(tok, "IDENTIFIER")==0)
-            return make_identifier(tok);
+            return make_identifier(input_tokens[next-1]);
         else if(strcmp(tok, "STRING_LITERAL") == 0)
-            return make_string(tok);
+            return make_string(input_tokens[next-1]);
         else if(strcmp(tok, "INT_LITERAL") == 0)
-            return make_number(1);
+            return make_number(atoi(input_tokens[next-1]));
         else
-            return make_kw(tok,tok);
+            return make_kw(tok,input_tokens[next-1]);
     }
-    *next--;
+    next--;
     return NULL;
 }
 
-
-
-bool factor()
+tree *stmt()
 {
-    tree *a = term("COMMA");
-    if(a)
-        return true;
-    return false;
+    int save = next;
+    tree *a;
+    a = create_stmt();     if(a) return make_nonterminal("stmt",1,a); next = save;
+    a = delete_stmt();     if(a) return make_nonterminal("stmt",1,a); next = save;
+    a = update_stmt();     if(a) return make_nonterminal("stmt",1,a); next = save;
+    a = drop_col_stmt();   if(a) return make_nonterminal("stmt",1,a); next = save;
+    a = select_stmt();     if(a) return make_nonterminal("stmt",1,a); next = save;
+    a = drop_table_stmt(); if(a) return make_nonterminal("stmt",1,a); next = save;
+    a = insert_stmt();     if(a) return make_nonterminal("stmt",1,a); next = save;
+    a = add_col_stmt();    if(a) return make_nonterminal("stmt",1,a); next = save;
+    return NULL;
+}
+
+tree *start()
+{
+    tree *a = stmt();
+    tree *b = term("SEMICOLON");
+    if(a && b)
+        return make_nonterminal("start", 2, a,b);
+    return NULL;
 }
 
 tree *create_col_list()
 {
-    char **save = next;
+    int save = next;
     tree *a = create_definition(); 
     if(a && !factor())
         return make_nonterminal("create_col_list",1,a);
@@ -210,7 +233,7 @@ tree *create_col_list()
 
 tree *create_definition()
 {
-    char **save = next;
+    int save = next;
     tree *a = term("IDENTIFIER");
     tree *b = data_type();
     if(a && b)
@@ -229,7 +252,7 @@ tree *create_definition()
 
 tree *column_list()
 {
-    char **save = next;
+    int save = next;
     tree *a = term("IDENTIFIER");
     if(a && !factor())
         return make_nonterminal("column_list",1,a);
@@ -245,7 +268,7 @@ tree *column_list()
 
 tree *data_type()
 {
-    char **save = next;
+    int save = next;
     tree *a = term("BIT");
     tree *b = opt_length();
     if(a && b)
@@ -281,7 +304,7 @@ tree *data_type()
 
 tree *opt_length()
 {
-    char **save = next;
+    int save = next;
     tree *a = term("BRACKET_OPEN");
     tree *b = term("INT_LITERAL");
     tree *c = term("BRACKET_CLOSE");
@@ -306,7 +329,7 @@ tree *create_stmt()
 
 tree *expr()
 {
-    char **save=next;
+    int save=next;
     tree *a=term("IDENTIFIER");
     if(a)
         return make_nonterminal("IDENTIFIER",1);
@@ -335,7 +358,7 @@ tree *expr()
 
 tree *select_expr_list()
 {
-    char **save = next;
+    int save = next;
     tree *a = expr();
     if(a && !factor())
     {
@@ -372,7 +395,7 @@ tree *select_stmt()
 
 tree *opt_where()
 {
-    char **save = next;
+    int save = next;
     tree *a = term("WHERE");
     tree *b = expr1();
     if(a&&b)
@@ -398,7 +421,7 @@ tree *insert_stmt()
 
 tree *opt_col_names()
 {
-    char **save = next;
+    int save = next;
     tree *a = term("BRACKET_OPEN");
     tree *b = column_list();
     tree *c = term("BRACKET_CLOSE");
@@ -411,7 +434,7 @@ tree *opt_col_names()
 
 tree *insert_vals_list()
 {
-    char **save = next;
+    int save = next;
     tree *a = expr();
     if(a && !factor())
         return make_nonterminal("insert_vals_list",1,a);
@@ -448,7 +471,7 @@ tree *expr2()
 
 tree *expr1()
 {
-    char **save = next;
+    int save = next;
     tree *a = expr();
     tree *b = term("COMPARATOR");
     tree *c = expr();
@@ -574,7 +597,7 @@ tree *add_col_stmt()
 
 tree *update_asign_list()
 {
-    char **save=next;
+    int save=next;
     tree *a=term("IDENTIFIER");
     tree *b=term("COMPARATOR");
     tree *c=expr();
@@ -598,44 +621,12 @@ tree *update_asign_list()
     return NULL;
 }
 
-tree *stmt()
+bool factor()
 {
-    char **save = next;
-    tree *a;
-    a = delete_stmt();
-    if(a) return make_nonterminal("stmt",1,a); 
-    next = save;
-    a = update_stmt();
-    if(a) return make_nonterminal("stmt",1,a); 
-    next = save;
-    a = drop_col_stmt();
-    if(a) return make_nonterminal("stmt",1,a); 
-    next = save;
-    a = select_stmt();
-    if(a) return make_nonterminal("stmt",1,a); 
-    next = save;
-    a = drop_table_stmt();
-    if(a) return make_nonterminal("stmt",1,a); 
-    next = save;
-    a = insert_stmt();
-    if(a) return make_nonterminal("stmt",1,a); 
-    next = save;
-    a = add_col_stmt();
-    if(a) return make_nonterminal("stmt",1,a); 
-    next = save;
-    a = create_stmt();
-    if(a) return make_nonterminal("stmt",1,a); 
-    next = save;
-    return NULL;
-}
-
-tree *start()
-{
-    tree *a = stmt();
-    tree *b = term("SEMICOLON");
-    if(a && b)
-        return make_nonterminal("start", 2, a,b);
-    return NULL;
+    tree *a = term("COMMA");
+    if(a)
+        return true;
+    return false;
 }
 
 // --------------------------------------------------
@@ -729,19 +720,6 @@ void makeRegexObj(void)
     regcomp(&re_obj[63] , "^;"                                                          , REG_ICASE | REG_NEWLINE );
 }
 
-
-void print(std::vector<string> v)
-{
-    int i;
-    cout<<"[";
-    if(v.size()>0)
-    {
-        cout<<" "<<v[0];
-        for(i=1;i<v.size();i++)
-            cout<<", "<<v[i];
-    }
-    cout<<" ]"<<endl;
-}
 
 void print(char **v, int size)
 {
