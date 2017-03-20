@@ -196,13 +196,6 @@ tree *term(char *tok)
 }
 
 
-tree *select_stmt()
-{
-    tree *a = term("select");
-    if(a)
-        return make_nonterminal("select_stmt", 1, a);
-    return NULL;
-}
 
 bool create_definition_factor()
 {
@@ -323,6 +316,83 @@ tree *create_stmt()
         return make_nonterminal("create_stmt", 6, a,b,c,d,e,f);
     return NULL;
 } 
+
+tree *expr()
+{
+    char **save=next;
+    tree *a=term("IDENTIFIER");
+    if(a)
+        return make_nonterminal("IDENTIFIER",1);
+
+    next=save;
+    a=term("STRING_LITERAL");
+        
+    if(a)
+        return make_nonterminal("STRING_LITERAL",1);
+    next=save;
+
+    a=term("INT_LITERAL");
+    if(a)
+        return make_nonterminal("INT_LITERAL",1);
+
+    next=save;
+    a = term("BRACKET_OPEN");
+    tree *b = term("IDENTIFIER"); 
+    tree *c = term("BRACKET_CLOSE"); 
+    if(a&&b&&c)
+        return make_nonterminal("expr",3,a,b,c);
+    next=save;
+    return NULL;
+
+}
+
+tree *select_expr_list()
+{
+    char **save = next;
+    tree *a = expr();
+    if(a && !factor())
+    {
+        return make_nonterminal("select_expr_list",1,a);
+    }
+    next = save;
+    tree *b = expr();
+    tree *c = term("COMMA");
+    tree *d = select_expr_list();
+    if(b && c && d)
+    {
+        return make_nonterminal("select_expr_list",3,b,c,d);
+    }
+    next = save;
+    tree *e = term("ALL_COLUMN");
+    if(e)
+        return make_nonterminal("select_expr_list",1,e);
+    next = save;
+    return NULL;
+}
+
+
+tree *select_stmt()
+{
+    tree *a = term("SELECT");
+    tree *b = select_expr_list();
+    tree *c = term("FROM");
+    tree *d = term("IDENTIFIER");
+    tree *e = opt_where;
+    if(a && b && c && d && e)
+        return make_nonterminal("select_stmt", 5, a, b, c, d, e);
+    return NULL;
+}
+
+tree *opt_where()
+{
+    char **save = next;
+    tree *a = term("WHERE");
+    tree *b = expr1();
+    if(a&&b)
+        return make_nonterminal("opt_where",2,a,b);
+    next = save;
+    return make_nonterminal("opt_where",0);
+}
 
 tree *insert_stmt()
 {
