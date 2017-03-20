@@ -1,1 +1,1 @@
-select * from data where 1;
+create table a(b int, primary key (a));
