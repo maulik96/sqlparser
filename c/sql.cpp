@@ -204,7 +204,7 @@ tree *select_stmt()
     return NULL;
 }
 
-bool create_definition_factor()
+bool factor()
 {
     tree *a = term("COMMA");
     if(a)
@@ -216,7 +216,7 @@ tree *create_col_list()
 {
     char **save = next;
     tree *a = create_definition(); 
-    if(a && !create_definition_factor())
+    if(a && !factor())
         return make_nonterminal("create_col_list",1,a);
     next = save;
     a = create_definition(); 
@@ -251,7 +251,7 @@ tree *column_list()
 {
     char **save = next;
     tree *a = term("IDENTIFIER");
-    if(a)
+    if(a && !factor())
         return make_nonterminal("column_list",1,a);
     next = save;
     a = term("IDENTIFIER");
@@ -351,20 +351,122 @@ tree *opt_col_names()
     return make_nonterminal("opt_col_names",0);
 }
 
+
 tree *insert_vals_list()
 {
     char **save = next;
+    tree *a = expr();
+    if(a && !factor())
+        return make_identifier("insert_vals_list",1,a);
+    next = save;
+    a = expr();
+    tree *b = term("COMMA");
+    tree *c = insert_vals_list();
+    if(a && b && c)
+        return make_identifier("insert_vals_list",3,a,b,c);
+    next = save;
+    return NULL;
+}
+
+tree *update_stmt()
+{
+    tree *a = term("UPDATE");    
+    tree *b = term("IDENTIFIER");    
+    tree *c = term("SET");    
+    tree *d = update_assign_list();    
+    tree *e = opt_where();
+    if(a && b && c && d && e)
+        return make_nonterminal("update_stmt",5,a,b,c,d,e);
+    return NULL;    
+}
+
+tree *expr2()
+{
+    tree *a = expr();
+    tree *b = term("COMPARATOR");
+    tree *c = expr();
+    if(a && b && c)
+        return make_nonterminal("expr", 3, a, b, c);
+}
+
+tree *expr1()
+{
+    char **save = next;
+    tree *a = expr();
+    tree *b = term("COMPARATOR");
+    tree *c = expr();
+    if(a && b && c)
+        return make_nonterminal("expr", 3,a,b,c);
+    next = save;
+    a = expr2();
+    b = term("OR");
+    c = expr1();
+    if(a && b && c)
+        return make_nonterminal("expr", 3,a,b,c);
+    next = save;
+    a = expr2();
+    b = term("AND");
+    c = expr1();
+    if(a && b && c)
+        return make_nonterminal("expr", 3,a,b,c);
+    next = save;
+    b = term("NOT");
+    c = expr1();
+    if(a && b && c)
+        return make_nonterminal("expr", 2,b,c);
+    next = save;
+    a = expr();
+    b = term("AND");
+    c = expr();
+    if(a && b && c)
+        return make_nonterminal("expr", 3,a,b,c);
+    next = save;
+    a = expr();
+    b = term("COMPARATOR");
+    c = term("BRACKET_OPEN");
+    d = select_stmt();
+    e = term("BRACKET_CLOSE");
+    if(a && b && c && d && e)
+        return make_nonterminal("expr", 5,a,b,c,d,e);
+    next = save;
+    a = expr();
+    b = term("COMPARATOR");
+    c = term("ANY");
+    d = term("BRACKET_OPEN");
+    e = select_stmt();
+    f = term("BRACKET_CLOSE");
+    if(a && b && c && d && e && f)
+        return make_nonterminal("expr", 6,a,b,c,d,e,f);
+    next = save;
+    a = expr();
+    b = term("COMPARATOR");
+    c = term("SOME");
+    d = term("BRACKET_OPEN");
+    e = select_stmt();
+    f = term("BRACKET_CLOSE");
+    if(a && b && c && d && e && f)
+        return make_nonterminal("expr", 6,a,b,c,d,e,f);
+    next = save;
+    a = expr();
+    b = term("COMPARATOR");
+    c = term("ALL");
+    d = term("BRACKET_OPEN");
+    e = select_stmt();
+    f = term("BRACKET_CLOSE");
+    if(a && b && c && d && e && f)
+        return make_nonterminal("expr", 6,a,b,c,d,e,f);
+    next = save;
     return NULL;
 }
 
 tree *stmt()
 {
     char **save = next;
-    // tree *a = select_stmt();
-    // if(a)
-    //     return make_nonterminal("stmt",1,a); 
-    // next = save;
     tree *a = create_stmt();
+    if(a)
+        return make_nonterminal("stmt",1,a); 
+    next = save;
+    a = insert_stmt();
     if(a)
         return make_nonterminal("stmt",1,a); 
     next = save;

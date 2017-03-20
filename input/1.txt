@@ -1,1 +1,1 @@
-select      a,b from data where x > all(select c from d);
+create table ab(id int, primary key(id));
