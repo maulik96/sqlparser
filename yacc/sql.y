@@ -37,7 +37,6 @@ tree *make_number(int n) {
     return result;
 }
 
-
 tree *make_string (char v[]) {
     tree *result= (tree*) malloc (sizeof(tree));
     result->nodetype= string_node;
@@ -95,8 +94,6 @@ void printTree(tree *root, int level)
 %token <strval> IDENTIFIER
 %token <strval> STRING_LITERAL
 %token <intval> INT_LITERAL
-
-
 %token <strval> CREATE
 %token <strval> TABLE
 %token <strval> INSERT
@@ -160,50 +157,49 @@ void printTree(tree *root, int level)
 %%
 
 stmts: stmt SEMICOLON {$$ = make_nonterminal("stmts", 2,$1,make_kw("SEMICOLON", $2)); printTree($$,0);}
-  ;
+    ;
 
-stmt: select_stmt       { $$ = make_nonterminal("stmt",1,$1); }
-    | create_stmt       { $$ = make_nonterminal("stmt",1,$1); }
-    | insert_stmt       { $$ = make_nonterminal("stmt",1,$1); }
-    | update_stmt       { $$ = make_nonterminal("stmt",1,$1); }
-    | delete_stmt       { $$ = make_nonterminal("stmt",1,$1); }
-    | drop_table_stmt       { $$ = make_nonterminal("stmt",1,$1); }
-    | drop_col_stmt     { $$ = make_nonterminal("stmt",1,$1); }
-    | add_col_stmt  { $$ = make_nonterminal("stmt",1,$1); }
+stmt: select_stmt     { $$ = make_nonterminal("stmt",1,$1); }
+    | create_stmt     { $$ = make_nonterminal("stmt",1,$1); }
+    | insert_stmt     { $$ = make_nonterminal("stmt",1,$1); }
+    | update_stmt     { $$ = make_nonterminal("stmt",1,$1); }
+    | delete_stmt     { $$ = make_nonterminal("stmt",1,$1); }
+    | drop_table_stmt { $$ = make_nonterminal("stmt",1,$1); }
+    | drop_col_stmt   { $$ = make_nonterminal("stmt",1,$1); }
+    | add_col_stmt    { $$ = make_nonterminal("stmt",1,$1); }
     ;
 
 
 
 create_stmt: CREATE TABLE IDENTIFIER BRACKET_OPEN create_col_list BRACKET_CLOSE {
-    $$ = make_nonterminal("create_stmt", 6, make_kw("CREATE", $1),make_kw("TABLE", $2),make_identifier($3),make_kw("BRACKET_OPEN",$4),$5,make_kw("BRACKET_CLOSE", $6));
-}
+        $$ = make_nonterminal("create_stmt", 6, make_kw("CREATE", $1),make_kw("TABLE", $2),make_identifier($3),make_kw("BRACKET_OPEN",$4),$5,make_kw("BRACKET_CLOSE", $6));
+    }
     ;
 
-create_col_list: create_definition {$$ = make_nonterminal("create_col_list",1,$1);}
+create_col_list: create_definition            {$$ = make_nonterminal("create_col_list",1,$1);}
     | create_col_list COMMA create_definition {$$ = make_nonterminal("create_col_list",3,$1,make_kw("COMMA",$2),$3);}
     ;
 
-create_definition : IDENTIFIER data_type column_atts {$$ = make_nonterminal("create_definition",3,make_identifier($1),$2,$3);}
+create_definition : IDENTIFIER data_type column_atts     {$$ = make_nonterminal("create_definition",3,make_identifier($1),$2,$3);}
     | PRIMARY KEY BRACKET_OPEN column_list BRACKET_CLOSE {$$ = make_nonterminal("create_definition",5,make_kw("PRIMARY",$1),make_kw("KEY",$2),make_kw("BRACKET_OPEN",$3),$4,make_kw("BRACKET_CLOSE",$5));}
-    | KEY BRACKET_OPEN column_list BRACKET_CLOSE    {$$ = make_nonterminal("create_definition",4,make_kw("KEY",$1),make_kw("BRACKET_OPEN",$2),$3,make_kw("BRACKET_CLOSE",$4));}    
-    | INDEX BRACKET_OPEN column_list BRACKET_CLOSE  {$$ = make_nonterminal("create_definition",4,make_kw("INDEX",$1),make_kw("BRACKET_OPEN",$2),$3,make_kw("BRACKET_CLOSE",$4));}
+    | KEY BRACKET_OPEN column_list BRACKET_CLOSE         {$$ = make_nonterminal("create_definition",4,make_kw("KEY",$1),make_kw("BRACKET_OPEN",$2),$3,make_kw("BRACKET_CLOSE",$4));}    
+    | INDEX BRACKET_OPEN column_list BRACKET_CLOSE       {$$ = make_nonterminal("create_definition",4,make_kw("INDEX",$1),make_kw("BRACKET_OPEN",$2),$3,make_kw("BRACKET_CLOSE",$4));}
     ;
 
 column_list: IDENTIFIER {$$ = make_nonterminal("column_list", 1, make_identifier($1));}
     | column_list COMMA IDENTIFIER {$$ = make_nonterminal("column_list", 3,$1,make_kw("COMMA",$2), make_identifier($3));}
     ;
 
-data_type :
-      BIT opt_length    {$$ = make_nonterminal("data_type", 2, make_kw("BIT", $1), $2);}
-    | INT opt_length    {$$ = make_nonterminal("data_type", 2, make_kw("INT", $1), $2);}
-    | INTEGER opt_length    {$$ = make_nonterminal("data_type", 2, make_kw("INTEGER", $1), $2);}
-    | BIGINT opt_length {$$ = make_nonterminal("data_type", 2, make_kw("BIGINT", $1), $2);}
-    | REAL opt_length   {$$ = make_nonterminal("data_type", 2, make_kw("REAL", $1), $2);}
-    | DOUBLE opt_length {$$ = make_nonterminal("data_type", 2, make_kw("DOUBLE", $1), $2);}
-    | FLOAT opt_length  {$$ = make_nonterminal("data_type", 2, make_kw("FLOAT", $1), $2);}
-    | DECIMAL opt_length    {$$ = make_nonterminal("data_type", 2, make_kw("DECIMAL", $1), $2);}
-    | CHAR opt_length   {$$ = make_nonterminal("data_type", 2, make_kw("CHAR", $1), $2);}
-    | VARCHAR opt_length    {$$ = make_nonterminal("data_type", 2, make_kw("VARCHAR", $1), $2);}
+data_type : BIT opt_length { $$ = make_nonterminal("data_type", 2, make_kw("BIT", $1), $2);}
+    | INT opt_length       { $$ = make_nonterminal("data_type", 2, make_kw("INT", $1), $2);}
+    | INTEGER opt_length   { $$ = make_nonterminal("data_type", 2, make_kw("INTEGER", $1), $2);}
+    | BIGINT opt_length    { $$ = make_nonterminal("data_type", 2, make_kw("BIGINT", $1), $2);}
+    | REAL opt_length      { $$ = make_nonterminal("data_type", 2, make_kw("REAL", $1), $2);}
+    | DOUBLE opt_length    { $$ = make_nonterminal("data_type", 2, make_kw("DOUBLE", $1), $2);}
+    | FLOAT opt_length     { $$ = make_nonterminal("data_type", 2, make_kw("FLOAT", $1), $2);}
+    | DECIMAL opt_length   { $$ = make_nonterminal("data_type", 2, make_kw("DECIMAL", $1), $2);}
+    | CHAR opt_length      { $$ = make_nonterminal("data_type", 2, make_kw("CHAR", $1), $2);}
+    | VARCHAR opt_length   { $$ = make_nonterminal("data_type", 2, make_kw("VARCHAR", $1), $2);}
     ;
 
 opt_length :    {$$ = make_nonterminal("opt_length",0);}
@@ -248,8 +244,8 @@ drop_col_stmt : ALTER TABLE IDENTIFIER DROP COLUMN IDENTIFIER {
     $$ = make_nonterminal("drop_col_stmt",6, make_kw("ALTER",$1), make_kw("TABLE", $2), make_identifier($3), make_kw("DROP", $4), make_kw("COLUMN", $5), make_identifier($6));
 }   ;
 
-add_col_stmt : ALTER TABLE IDENTIFIER ADD COLUMN create_definition  {
-    $$ = make_nonterminal("add_col_stmt",6, make_kw("ALTER",$1), make_kw("TABLE", $2), make_identifier($3), make_kw("ADD", $4), make_kw("COLUMN", $5), $6);
+add_col_stmt : ALTER TABLE IDENTIFIER ADD create_definition  {
+    $$ = make_nonterminal("add_col_stmt",5, make_kw("ALTER",$1), make_kw("TABLE", $2), make_identifier($3), make_kw("ADD", $4), $5);
 }   ;
 
 select_stmt: SELECT select_opts select_expr_list FROM IDENTIFIER opt_where {

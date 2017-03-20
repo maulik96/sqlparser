@@ -1,1 +1,1 @@
-create table a(b int, primary key (a));
+insert into a values(1);

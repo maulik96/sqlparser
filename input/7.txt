@@ -1,0 +1,1 @@
+alter table a drop column a;

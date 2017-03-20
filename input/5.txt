@@ -1,0 +1,1 @@
+delete from a where 3<6;

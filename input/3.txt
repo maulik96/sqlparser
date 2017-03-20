@@ -1,1 +1,1 @@
-select 2 from data x = 2;
+select  a from data where x = 2;
