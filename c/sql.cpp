@@ -111,10 +111,12 @@ void process(char *match_string)
                     free(temp_token);
                     temp_token=(char*)malloc(100);
                     strncpy(temp_token,match_string,matchptr[0].rm_eo);
+                    temp_token[matchptr[0].rm_eo] = '\0';
                     std::string s1(temp_token), s2(names[i]);
                     input_tokens_temp.push_back(s1);
                     name_tokens_temp.push_back(s2);
-                    match_string += matchptr[0].rm_eo;
+                    match_string[matchptr[0].rm_eo-1] = ' ';
+                    match_string += matchptr[0].rm_eo-1;
                 }
                 else
                     match_string += matchptr[0].rm_eo;
@@ -142,6 +144,10 @@ void process(char *match_string)
         {
             next=0;
             printTree(start(),0);
+        }
+        else
+        {
+            printf("ERROR : Syntax error detected\n");
         }
     }   
 }
@@ -379,7 +385,6 @@ tree *create_stmt()
 tree *expr()
 {
     int save=next;
-    // printf("%s\n",name_tokens[next]);
     tree *a=term("IDENTIFIER");
     if(a)
         return make_nonterminal("expr",1,a);
@@ -824,7 +829,7 @@ void makeRegexObj(void)
     regcomp(&re_obj[59] , "^-[0-9][0-9]*"                                               , REG_ICASE | REG_NEWLINE );
     regcomp(&re_obj[60] , "^\"[^\"]*\""                                                 , REG_ICASE | REG_NEWLINE );
     regcomp(&re_obj[61] , "^\'[^\"]*\'"                                                 , REG_ICASE | REG_NEWLINE );
-    regcomp(&re_obj[62] , "^[ ][ ]*"                                                    , REG_ICASE | REG_NEWLINE );
+    regcomp(&re_obj[62] , "^  *"                                                        , REG_ICASE | REG_NEWLINE );
     regcomp(&re_obj[63] , "^;"                                                          , REG_ICASE | REG_NEWLINE );
 }
 
