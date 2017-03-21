@@ -6,9 +6,9 @@ using namespace std;
 #define SIZE 64
 char *names[]={"CREATE","TABLE","INSERT","INTO","SELECT","FROM","WHERE","UPDATE","PRIMARY","INDEX","FOREIGN","KEY","DEFAULT","NOT","NULL_TOKEN","AND","OR","XOR","ALL","SOME","ANY","BIT","INT","INTEGER","BIGINT","REAL","DOUBLE","FLOAT","DECIMAL","CHAR","VARCHAR","REFERENCES","ORDER","BY","DELETE","VALUES","AUTO_INCREMENT","ASC","DESC","UNIQUE","IN","TRUE","FALSE","DISTINCT","SET","DROP","ALTER","ADD","COLUMN","COMPARATOR","DATATYPE","ALL_COLUMN","BRACKET_OPEN","BRACKET_CLOSE","COMMA","IDENTIFIER","IDENTIFIER","INT_LITERAL","INT_LITERAL","INT_LITERAL","STRING_LITERAL","STRING_LITERAL","SPACE","SEMICOLON"};
 
-// Array of input tokens
+// Array of input and labelled tokens
+std::vector<string> input_tokens_temp,name_tokens_temp;
 char **input_tokens;
-// Array of labelled tokens
 char **name_tokens;
 // Counter to keep track of current token
 int next;
@@ -94,7 +94,6 @@ int main()
 void process(char *match_string)
 {
     int i,flag;
-    std::vector<string> input_tokens_temp,name_tokens_temp;
     char *temp_token=(char*)malloc(100);
     regmatch_t matchptr[10];
 
@@ -140,10 +139,11 @@ void process(char *match_string)
         // print(input_tokens,input_tokens_temp.size());
         // print(name_tokens,name_tokens_temp.size());
         next = 0;
-        if(start())
+        tree *root;
+        if(root=start())
         {
             next=0;
-            printTree(start(),0);
+            printTree(root,0);
         }
         else
         {
@@ -211,6 +211,8 @@ tree *make_identifier(char v[])
 // Switch between terminal node based on label
 tree *term(char *tok)
 {
+    if(next==name_tokens_temp.size())
+        return NULL;
     if(strcmp(name_tokens[next++], tok) == 0)
     {
         if(strcmp(tok, "IDENTIFIER")==0)
@@ -463,8 +465,23 @@ tree *select_stmt()
     if(c==NULL)
         return NULL;
     tree *d = term("IDENTIFIER");
+
+
     if(d==NULL)
+    {
+        d=term("BRACKET_OPEN");
+        if(d==NULL)
+            return NULL;
+        tree *e=select_stmt();
+        tree *f=term("BRACKET_CLOSE");
+        tree *g = (e==NULL || f==NULL)?NULL:opt_where();
+        if(g==NULL)
+            return NULL;
+        if(a && b && c && d && e && f&& g)
+            return make_nonterminal("select_stmt", 7, a, b, c, d, e,f,g);
+
         return NULL;
+    }
     tree *e = opt_where();
     if(e==NULL)
         return NULL;
@@ -557,6 +574,8 @@ tree *expr2()
 {
     tree *a = expr();
     tree *b = term("COMPARATOR");
+    if(a!=NULL && b==NULL)
+        return make_nonterminal("expr",1,a);
     tree *c = expr();
     if(a && b && c)
         return make_nonterminal("expr", 3, a, b, c);

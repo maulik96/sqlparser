@@ -251,6 +251,10 @@ add_col_stmt : ALTER TABLE IDENTIFIER ADD create_definition  {
 select_stmt: SELECT select_opts select_expr_list FROM IDENTIFIER opt_where {
     $$ = make_nonterminal("select_stmt", 6, make_kw("SELECT",$1),$2,$3,make_kw("FROM",$4),make_identifier($5),$6);
 }
+    |  SELECT select_opts select_expr_list FROM BRACKET_OPEN select_stmt BRACKET_CLOSE opt_where {
+        $$ = make_nonterminal("select_stmt", 8, make_kw("SELECT",$1),$2,$3,make_kw("FROM",$4),make_kw("BRACKET_OPEN",$5), $6,make_kw("BRACKET_CLOSE",$7),$8);
+
+    }
     ;
 
 select_opts:        {$$ = make_nonterminal("select_opts",0);}
