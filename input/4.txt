@@ -1,1 +1,1 @@
-update sql set a=7 where s>9;
+update sql set a=7,j="bfhe" where s>9;
